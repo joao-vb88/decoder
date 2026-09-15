@@ -4,6 +4,13 @@ from decoder import Decoder, carregar_dic, carregar_freq
 
 app = Flask(__name__)
 
+app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'dev-fallback-nao-use-em-prod')
+app.config.update(
+    SESSION_COOKIE_SECURE=True,
+    SESSION_COOKIE_HTTPONLY=True,
+    SESSION_COOKIE_SAMESITE='Lax',
+)
+
 # Carrega uma vez só (na inicialização do servidor)
 palavras = carregar_dic()
 freq = carregar_freq()
@@ -46,4 +53,4 @@ def decode():
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
-    app.run(host="0.0.0.0", port=port)
+    app.run(host="0.0.0.0", port=port, debug=False)
