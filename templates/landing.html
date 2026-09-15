@@ -1,0 +1,1124 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Decoder — decifre frases embaralhadas</title>
+  <link rel="icon" href="/static/icons/icon-192.png" type="image/png">
+  <meta name="theme-color" content="#4f8cff">
+  <link rel="manifest" href="/static/manifest.json">
+
+  <style>
+    :root {
+      --bg: #08090d;
+      --bg-2: #0c0f16;
+      --card: #12151c;
+      --card-2: #171b25;
+      --fg: #f0f2f5;
+      --muted: #8b93a7;
+      --muted-2: #5a6274;
+      --accent: #4f8cff;
+      --accent-2: #7c5cff;
+      --accent-3: #b06aff;
+      --accent-glow: rgba(79, 140, 255, 0.4);
+      --border: #1f242e;
+      --border-2: #2a303c;
+      --erro: #ff6b6b;
+      --erro-bg: rgba(255, 107, 107, 0.08);
+      --ok: #4ade80;
+      --ok-bg: rgba(74, 222, 128, 0.10);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; }
+
+    body {
+      font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+      background: var(--bg);
+      color: var(--fg);
+      min-height: 100vh;
+      -webkit-font-smoothing: antialiased;
+      overflow-x: hidden;
+      display: grid;
+      grid-template-columns: 1.15fr 1fr;
+    }
+
+    /* ============================================================
+       LADO ESQUERDO — Branding
+       ============================================================ */
+    .lado-esquerdo {
+      position: relative;
+      padding: 44px 56px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      overflow: hidden;
+      background: var(--bg);
+    }
+
+    .lado-esquerdo::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(255, 255, 255, 0.028) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.028) 1px, transparent 1px);
+      background-size: 56px 56px;
+      mask-image: radial-gradient(ellipse 90% 70% at 30% 50%, black 20%, transparent 80%);
+      -webkit-mask-image: radial-gradient(ellipse 90% 70% at 30% 50%, black 20%, transparent 80%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .lado-esquerdo::after {
+      content: "";
+      position: absolute;
+      top: -180px;
+      left: -120px;
+      width: 700px;
+      height: 700px;
+      background: radial-gradient(circle, rgba(79, 140, 255, 0.18), transparent 55%);
+      filter: blur(40px);
+      pointer-events: none;
+      z-index: 0;
+      animation: flutuar 14s ease-in-out infinite;
+    }
+
+    .lado-esquerdo > .glow-2 {
+      position: absolute;
+      bottom: -200px;
+      right: -150px;
+      width: 600px;
+      height: 600px;
+      background: radial-gradient(circle, rgba(176, 106, 255, 0.14), transparent 55%);
+      filter: blur(50px);
+      pointer-events: none;
+      z-index: 0;
+      animation: flutuar 18s ease-in-out infinite reverse;
+    }
+
+    @keyframes flutuar {
+      0%, 100% { transform: translate(0, 0); }
+      50%      { transform: translate(20px, -30px); }
+    }
+
+    .topo-logo {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      text-decoration: none;
+      color: var(--fg);
+      width: fit-content;
+    }
+
+    .topo-logo-icon {
+      width: 44px;
+      height: 44px;
+      border-radius: 13px;
+      background: linear-gradient(135deg, var(--accent) 0%, var(--accent-2) 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      box-shadow:
+        0 10px 30px var(--accent-glow),
+        0 1px 0 rgba(255, 255, 255, 0.2) inset;
+    }
+
+    .topo-logo-text {
+      font-size: 20px;
+      font-weight: 700;
+      letter-spacing: -0.4px;
+    }
+
+    .conteudo {
+      position: relative;
+      z-index: 1;
+      max-width: 560px;
+      margin: 60px 0;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 12px 6px 8px;
+      background: rgba(79, 140, 255, 0.08);
+      border: 1px solid rgba(79, 140, 255, 0.2);
+      border-radius: 999px;
+      font-size: 12.5px;
+      color: #a8c1ff;
+      font-weight: 500;
+      margin-bottom: 26px;
+      width: fit-content;
+      animation: entrar 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
+    }
+
+    .badge-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--ok);
+      box-shadow: 0 0 8px var(--ok);
+      animation: pulsar 2s ease-in-out infinite;
+    }
+
+    @keyframes pulsar {
+      0%, 100% { opacity: 1; }
+      50%      { opacity: 0.5; }
+    }
+
+    h1 {
+      font-size: clamp(38px, 4.2vw, 58px);
+      font-weight: 800;
+      line-height: 1.05;
+      letter-spacing: -2px;
+      margin-bottom: 22px;
+      background: linear-gradient(180deg, #ffffff 30%, #a8b0c2 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      animation: entrar 0.7s 0.05s cubic-bezier(0.16, 1, 0.3, 1) both;
+    }
+
+    h1 .grad {
+      background: linear-gradient(135deg, var(--accent) 0%, var(--accent-3) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .descricao {
+      font-size: 17px;
+      line-height: 1.6;
+      color: var(--muted);
+      margin-bottom: 34px;
+      max-width: 480px;
+      animation: entrar 0.7s 0.1s cubic-bezier(0.16, 1, 0.3, 1) both;
+    }
+
+    .features {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      margin-bottom: 40px;
+      animation: entrar 0.7s 0.15s cubic-bezier(0.16, 1, 0.3, 1) both;
+    }
+
+    .features li {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 14.5px;
+      color: #c5ccd9;
+    }
+
+    .feature-icone {
+      width: 26px;
+      height: 26px;
+      border-radius: 8px;
+      background: rgba(79, 140, 255, 0.1);
+      border: 1px solid rgba(79, 140, 255, 0.2);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--accent);
+      flex-shrink: 0;
+    }
+
+    .preview {
+      position: relative;
+      z-index: 1;
+      background: linear-gradient(180deg, var(--card-2) 0%, var(--card) 100%);
+      border: 1px solid var(--border-2);
+      border-radius: 14px;
+      padding: 18px 20px;
+      max-width: 460px;
+      box-shadow:
+        0 20px 50px rgba(0, 0, 0, 0.5),
+        0 1px 0 rgba(255, 255, 255, 0.04) inset;
+      animation: entrar 0.8s 0.25s cubic-bezier(0.16, 1, 0.3, 1) both;
+    }
+
+    .preview-topo {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-bottom: 16px;
+    }
+
+    .preview-bolinha {
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      background: #2a303c;
+    }
+    .preview-bolinha:nth-child(1) { background: #ff5f57; }
+    .preview-bolinha:nth-child(2) { background: #febc2e; }
+    .preview-bolinha:nth-child(3) { background: #28c840; }
+
+    .preview-url {
+      margin-left: 10px;
+      font-size: 11px;
+      color: var(--muted-2);
+      font-family: ui-monospace, "SF Mono", Menlo, monospace;
+    }
+
+    .preview-input {
+      background: #0a0c11;
+      border: 1px solid var(--border-2);
+      border-radius: 8px;
+      padding: 10px 14px;
+      font-family: ui-monospace, "SF Mono", Menlo, monospace;
+      font-size: 13.5px;
+      color: var(--fg);
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .preview-input .cursor {
+      display: inline-block;
+      width: 2px;
+      height: 14px;
+      background: var(--accent);
+      animation: piscar 1.1s steps(1) infinite;
+      margin-left: 2px;
+      vertical-align: middle;
+    }
+
+    @keyframes piscar {
+      50% { opacity: 0; }
+    }
+
+    .preview-resultado {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
+    .preview-chip {
+      padding: 5px 11px;
+      background: #1a1f29;
+      border: 1px solid var(--border-2);
+      border-radius: 999px;
+      font-family: ui-monospace, "SF Mono", Menlo, monospace;
+      font-size: 12.5px;
+      color: #c5ccd9;
+    }
+
+    .preview-chip.melhor {
+      background: linear-gradient(135deg, var(--accent), var(--accent-2));
+      border-color: transparent;
+      color: white;
+      font-weight: 600;
+      box-shadow: 0 4px 14px var(--accent-glow);
+    }
+
+    .rodape-esquerdo {
+      position: relative;
+      z-index: 1;
+      font-size: 12.5px;
+      color: var(--muted-2);
+    }
+
+    @keyframes entrar {
+      from { opacity: 0; transform: translateY(16px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ============================================================
+       LADO DIREITO — Card de autenticação
+       ============================================================ */
+    .lado-direito {
+      position: relative;
+      background: var(--bg-2);
+      border-left: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 40px 32px;
+      overflow: hidden;
+    }
+
+    .lado-direito::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background-image:
+        radial-gradient(circle at 70% 30%, rgba(124, 92, 255, 0.10), transparent 45%),
+        radial-gradient(circle at 20% 90%, rgba(79, 140, 255, 0.08), transparent 45%);
+      pointer-events: none;
+    }
+
+    .card-auth {
+      position: relative;
+      z-index: 1;
+      width: 100%;
+      max-width: 420px;
+    }
+
+    .tabs {
+      position: relative;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 5px;
+      margin-bottom: 26px;
+    }
+
+    .tab-indicador {
+      position: absolute;
+      top: 5px;
+      left: 5px;
+      width: calc(50% - 5px);
+      height: calc(100% - 10px);
+      background: linear-gradient(135deg, var(--accent) 0%, var(--accent-2) 100%);
+      border-radius: 8px;
+      transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+      box-shadow: 0 6px 18px var(--accent-glow);
+    }
+
+    .tabs[data-tab="register"] .tab-indicador {
+      transform: translateX(100%);
+    }
+
+    .tab-btn {
+      position: relative;
+      z-index: 1;
+      background: transparent;
+      border: none;
+      color: var(--muted);
+      padding: 11px 12px;
+      border-radius: 8px;
+      font-size: 14.5px;
+      font-weight: 600;
+      cursor: pointer;
+      font-family: inherit;
+      transition: color 0.25s;
+    }
+
+    .tab-btn.ativo {
+      color: white;
+    }
+
+    .tab-btn:not(.ativo):hover {
+      color: var(--fg);
+    }
+
+    .form-wrap {
+      position: relative;
+    }
+
+    .form-tab {
+      display: none;
+      animation: fadeIn 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .form-tab.ativo {
+      display: block;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .form-titulo {
+      font-size: 22px;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+      margin-bottom: 6px;
+    }
+
+    .form-sub {
+      font-size: 14px;
+      color: var(--muted);
+      margin-bottom: 24px;
+      line-height: 1.5;
+    }
+
+    .alerta {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      padding: 12px 14px;
+      border-radius: 10px;
+      font-size: 13.5px;
+      line-height: 1.5;
+      margin-bottom: 18px;
+      animation: tremer 0.35s ease;
+    }
+
+    .alerta.erro {
+      background: var(--erro-bg);
+      border: 1px solid rgba(255, 107, 107, 0.28);
+      color: var(--erro);
+    }
+
+    .alerta.ok {
+      background: var(--ok-bg);
+      border: 1px solid rgba(74, 222, 128, 0.25);
+      color: var(--ok);
+    }
+
+    .alerta svg { flex-shrink: 0; margin-top: 1px; }
+
+    @keyframes tremer {
+      0%, 100% { transform: translateX(0); }
+      25%      { transform: translateX(-4px); }
+      75%      { transform: translateX(4px); }
+    }
+
+    .campo { margin-bottom: 15px; }
+
+    .campo-label {
+      display: block;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--fg);
+      margin-bottom: 7px;
+    }
+
+    .input-wrap {
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+
+    .input-icon {
+      position: absolute;
+      left: 14px;
+      color: var(--muted-2);
+      pointer-events: none;
+      display: flex;
+      transition: color 0.15s;
+      z-index: 1;
+    }
+
+    .input-wrap input {
+      width: 100%;
+      background: #0a0c11;
+      border: 1.5px solid var(--border-2);
+      border-radius: 11px;
+      color: var(--fg);
+      padding: 13px 14px 13px 44px;
+      font-size: 14.5px;
+      outline: none;
+      transition: border-color 0.15s, box-shadow 0.15s, background 0.15s;
+      font-family: inherit;
+    }
+
+    .input-wrap input::placeholder { color: var(--muted-2); }
+    .input-wrap input:hover { border-color: #343b4a; }
+
+    .input-wrap input:focus {
+      border-color: var(--accent);
+      background: #07080c;
+      box-shadow: 0 0 0 4px rgba(79, 140, 255, 0.13);
+    }
+
+    .input-wrap:focus-within .input-icon { color: var(--accent); }
+
+    .toggle-senha {
+      position: absolute;
+      right: 9px;
+      background: transparent;
+      border: none;
+      color: var(--muted-2);
+      cursor: pointer;
+      padding: 7px;
+      border-radius: 7px;
+      display: flex;
+      align-items: center;
+      transition: color 0.15s, background 0.15s;
+    }
+
+    .toggle-senha:hover {
+      color: var(--fg);
+      background: rgba(255, 255, 255, 0.06);
+    }
+
+    .forca {
+      display: flex;
+      gap: 4px;
+      margin-top: 8px;
+    }
+
+    .forca-barra {
+      flex: 1;
+      height: 3px;
+      background: var(--border-2);
+      border-radius: 2px;
+      transition: background 0.25s;
+    }
+
+    .forca-texto {
+      font-size: 11.5px;
+      color: var(--muted-2);
+      margin-top: 6px;
+      min-height: 14px;
+      transition: color 0.2s;
+    }
+
+    .linha-check {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin: 4px 0 18px;
+      font-size: 13.5px;
+    }
+
+    .checkbox {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--muted);
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .checkbox input {
+      appearance: none;
+      width: 17px;
+      height: 17px;
+      border: 1.5px solid var(--border-2);
+      border-radius: 5px;
+      cursor: pointer;
+      position: relative;
+      transition: all 0.15s;
+      flex-shrink: 0;
+    }
+
+    .checkbox input:checked {
+      background: var(--accent);
+      border-color: var(--accent);
+    }
+
+    .checkbox input:checked::after {
+      content: "";
+      position: absolute;
+      left: 5px;
+      top: 1px;
+      width: 4px;
+      height: 9px;
+      border: solid white;
+      border-width: 0 2.2px 2.2px 0;
+      transform: rotate(45deg);
+    }
+
+    .checkbox:hover { color: var(--fg); }
+
+    .link-esqueci {
+      color: var(--accent);
+      text-decoration: none;
+      font-weight: 500;
+    }
+
+    .link-esqueci:hover { text-decoration: underline; }
+
+    .btn-primario {
+      width: 100%;
+      background: linear-gradient(135deg, var(--accent) 0%, var(--accent-2) 100%);
+      border: none;
+      color: white;
+      padding: 13px;
+      border-radius: 11px;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      font-family: inherit;
+      letter-spacing: -0.1px;
+      transition: transform 0.1s, box-shadow 0.2s, opacity 0.2s;
+      box-shadow: 0 8px 24px var(--accent-glow);
+      margin-top: 4px;
+    }
+
+    .btn-primario:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 12px 32px var(--accent-glow);
+    }
+
+    .btn-primario:active { transform: translateY(0); }
+    .btn-primario:disabled { opacity: 0.75; cursor: wait; transform: none; }
+
+    .spinner {
+      display: inline-block;
+      width: 14px;
+      height: 14px;
+      border: 2px solid rgba(255, 255, 255, 0.35);
+      border-top-color: white;
+      border-radius: 50%;
+      animation: girar 0.6s linear infinite;
+      vertical-align: middle;
+      margin-right: 8px;
+    }
+
+    @keyframes girar { to { transform: rotate(360deg); } }
+
+    .divisor {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      margin: 22px 0;
+      color: var(--muted-2);
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      font-weight: 500;
+    }
+
+    .divisor::before,
+    .divisor::after {
+      content: "";
+      flex: 1;
+      height: 1px;
+      background: var(--border);
+    }
+
+    .btn-anonimo {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      width: 100%;
+      padding: 13px;
+      background: transparent;
+      border: 1.5px solid var(--border-2);
+      border-radius: 11px;
+      color: var(--fg);
+      font-size: 14.5px;
+      font-weight: 600;
+      text-decoration: none;
+      font-family: inherit;
+      transition: all 0.15s;
+      cursor: pointer;
+    }
+
+    .btn-anonimo:hover {
+      border-color: var(--accent);
+      background: rgba(79, 140, 255, 0.05);
+      color: var(--accent);
+      transform: translateY(-1px);
+    }
+
+    .btn-anonimo svg {
+      transition: transform 0.2s;
+    }
+
+    .btn-anonimo:hover svg {
+      transform: translateX(3px);
+    }
+
+    @media (max-width: 1024px) {
+      body { grid-template-columns: 1fr; }
+      .lado-esquerdo {
+        padding: 32px 28px;
+        min-height: auto;
+      }
+      .lado-esquerdo::after,
+      .lado-esquerdo > .glow-2 { display: none; }
+      .conteudo { margin: 30px 0; }
+      h1 { font-size: 34px; letter-spacing: -1.2px; }
+      .descricao { font-size: 15px; margin-bottom: 26px; }
+      .preview { display: none; }
+      .rodape-esquerdo { display: none; }
+      .lado-direito {
+        border-left: none;
+        border-top: 1px solid var(--border);
+        padding: 32px 24px 48px;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .lado-esquerdo { padding: 24px 20px; }
+      h1 { font-size: 28px; }
+      .badge { font-size: 11.5px; }
+      .features li { font-size: 13.5px; }
+      .card-auth { max-width: 100%; }
+      .form-titulo { font-size: 20px; }
+    }
+  </style>
+</head>
+<body>
+
+  <aside class="lado-esquerdo">
+    <div class="glow-2"></div>
+
+    <a href="/" class="topo-logo">
+      <div class="topo-logo-icon">🔎</div>
+      <div class="topo-logo-text">Decoder</div>
+    </a>
+
+    <div class="conteudo">
+      <div class="badge">
+        <span class="badge-dot"></span>
+        Motor de decifragem em tempo real
+      </div>
+
+      <h1>
+        Decifre qualquer frase <span class="grad">embaralhada</span>.
+      </h1>
+
+      <p class="descricao">
+        Aquele texto que parece grego? Provavelmente é só alguém digitando com os dedos
+        no lugar errado do teclado. O Decoder desvenda em milissegundos.
+      </p>
+
+      <ul class="features">
+        <li>
+          <span class="feature-icone">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+          </span>
+          <span>Resultado instantâneo, sem recarregar a página</span>
+        </li>
+        <li>
+          <span class="feature-icone">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+          </span>
+          <span>Ordena candidatos pela frequência real do português</span>
+        </li>
+        <li>
+          <span class="feature-icone">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l3 6 7 1-5 5 1 7-6-3-6 3 1-7-5-5 7-1z"/></svg>
+          </span>
+          <span>Crie uma conta para guardar seu histórico (em breve)</span>
+        </li>
+      </ul>
+
+      <div class="preview">
+        <div class="preview-topo">
+          <span class="preview-bolinha"></span>
+          <span class="preview-bolinha"></span>
+          <span class="preview-bolinha"></span>
+          <span class="preview-url">decoder.app</span>
+        </div>
+        <div class="preview-input">
+          <span>nry bpkw r hpsi<span class="cursor"></span></span>
+        </div>
+        <div class="preview-resultado">
+          <span class="preview-chip melhor">meu</span>
+          <span class="preview-chip melhor">nome</span>
+          <span class="preview-chip melhor">é</span>
+          <span class="preview-chip melhor">joão</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="rodape-esquerdo">
+      Feito com muito café e um teclado fora do lugar.
+    </div>
+  </aside>
+
+
+  <main class="lado-direito">
+    <div class="card-auth">
+
+      <div class="tabs" id="tabs" data-tab="{{ aba or 'login' }}">
+        <div class="tab-indicador"></div>
+        <button type="button" class="tab-btn {% if (aba or 'login') == 'login' %}ativo{% endif %}" data-target="login">
+          Entrar
+        </button>
+        <button type="button" class="tab-btn {% if aba == 'register' %}ativo{% endif %}" data-target="register">
+          Criar conta
+        </button>
+      </div>
+
+      {% if erro %}
+        <div class="alerta erro">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"/>
+            <line x1="12" y1="8" x2="12" y2="12"/>
+            <line x1="12" y1="16" x2="12.01" y2="16"/>
+          </svg>
+          <span>{{ erro }}</span>
+        </div>
+      {% endif %}
+
+      <div class="form-wrap">
+
+        <!-- =============== LOGIN =============== -->
+        <div class="form-tab {% if (aba or 'login') == 'login' %}ativo{% endif %}" data-tab-content="login">
+          <h2 class="form-titulo">Bem-vindo de volta</h2>
+          <p class="form-sub">Entre para continuar de onde parou.</p>
+
+          <form method="post" action="/auth/login{% if request.args.get('next') %}?next={{ request.args.get('next') }}{% endif %}" id="form-login">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+            <div class="campo">
+              <label class="campo-label" for="login-ident">Usuário ou email</label>
+              <div class="input-wrap">
+                <span class="input-icon">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                    <circle cx="12" cy="7" r="4"/>
+                  </svg>
+                </span>
+                <input id="login-ident" name="identificador" type="text" placeholder="seu_usuario ou voce@exemplo.com" autocomplete="username" value="{{ identificador or '' }}" required>
+              </div>
+            </div>
+
+            <div class="campo">
+              <label class="campo-label" for="login-pass">Senha</label>
+              <div class="input-wrap">
+                <span class="input-icon">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="3" y="11" width="18" height="11" rx="2"/>
+                    <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                  </svg>
+                </span>
+                <input id="login-pass" name="password" type="password" placeholder="••••••••" autocomplete="current-password" required>
+                <button type="button" class="toggle-senha" data-target="login-pass" aria-label="Mostrar senha">
+                  <svg class="olho-aberto" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                    <circle cx="12" cy="12" r="3"/>
+                  </svg>
+                  <svg class="olho-fechado" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none">
+                    <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/>
+                    <line x1="1" y1="1" x2="23" y2="23"/>
+                  </svg>
+                </button>
+              </div>
+            </div>
+
+            <div class="linha-check">
+              <label class="checkbox">
+                <input type="checkbox" name="lembrar" value="1" checked>
+                <span>Lembrar de mim</span>
+              </label>
+              <a href="#" onclick="return false" class="link-esqueci">Esqueci a senha</a>
+            </div>
+
+            <button type="submit" class="btn-primario" id="btn-login">Entrar</button>
+          </form>
+        </div>
+
+        <!-- =============== REGISTER =============== -->
+        <div class="form-tab {% if aba == 'register' %}ativo{% endif %}" data-tab-content="register">
+          <h2 class="form-titulo">Criar sua conta</h2>
+          <p class="form-sub">Leva menos de um minuto. Sem spam, sem enrolação.</p>
+
+          <form method="post" action="/auth/register" id="form-register" novalidate>
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+            <div class="campo">
+              <label class="campo-label" for="reg-email">Email</label>
+              <div class="input-wrap">
+                <span class="input-icon">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+                    <polyline points="22,6 12,13 2,6"/>
+                  </svg>
+                </span>
+                <input id="reg-email" name="email" type="email" placeholder="voce@exemplo.com" autocomplete="email" value="{{ email or '' }}" required>
+              </div>
+            </div>
+
+            <div class="campo">
+              <label class="campo-label" for="reg-user">Nome de usuário</label>
+              <div class="input-wrap">
+                <span class="input-icon">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                    <circle cx="12" cy="7" r="4"/>
+                  </svg>
+                </span>
+                <input id="reg-user" name="username" type="text" placeholder="seu_usuario" autocomplete="username" value="{{ username or '' }}" required minlength="3" maxlength="20">
+              </div>
+            </div>
+
+            <div class="campo">
+              <label class="campo-label" for="reg-pass">Senha</label>
+              <div class="input-wrap">
+                <span class="input-icon">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="3" y="11" width="18" height="11" rx="2"/>
+                    <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                  </svg>
+                </span>
+                <input id="reg-pass" name="password" type="password" placeholder="Mínimo 6 caracteres" autocomplete="new-password" required minlength="6">
+                <button type="button" class="toggle-senha" data-target="reg-pass" aria-label="Mostrar senha">
+                  <svg class="olho-aberto" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                    <circle cx="12" cy="12" r="3"/>
+                  </svg>
+                  <svg class="olho-fechado" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none">
+                    <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/>
+                    <line x1="1" y1="1" x2="23" y2="23"/>
+                  </svg>
+                </button>
+              </div>
+              <div class="forca" id="forca">
+                <div class="forca-barra"></div>
+                <div class="forca-barra"></div>
+                <div class="forca-barra"></div>
+                <div class="forca-barra"></div>
+              </div>
+              <div class="forca-texto" id="forca-texto"></div>
+            </div>
+
+            <div class="campo">
+              <label class="campo-label" for="reg-pass2">Confirmar senha</label>
+              <div class="input-wrap">
+                <span class="input-icon">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="3" y="11" width="18" height="11" rx="2"/>
+                    <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                  </svg>
+                </span>
+                <input id="reg-pass2" name="password2" type="password" placeholder="Repita a senha" autocomplete="new-password" required>
+                <button type="button" class="toggle-senha" data-target="reg-pass2" aria-label="Mostrar senha">
+                  <svg class="olho-aberto" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                    <circle cx="12" cy="12" r="3"/>
+                  </svg>
+                  <svg class="olho-fechado" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none">
+                    <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/>
+                    <line x1="1" y1="1" x2="23" y2="23"/>
+                  </svg>
+                </button>
+              </div>
+            </div>
+
+            <div class="linha-check">
+              <label class="checkbox">
+                <input type="checkbox" name="termos" value="1" required>
+                <span>Aceito os <a href="#" onclick="return false" style="color:var(--accent);text-decoration:none">termos</a></span>
+              </label>
+            </div>
+
+            <button type="submit" class="btn-primario" id="btn-register">Criar conta</button>
+          </form>
+        </div>
+      </div>
+
+      <div class="divisor">ou</div>
+
+      <a href="/app" class="btn-anonimo">
+        Continuar sem conta
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="5" y1="12" x2="19" y2="12"/>
+          <polyline points="12 5 19 12 12 19"/>
+        </svg>
+      </a>
+
+    </div>
+  </main>
+
+  <script>
+    // ============================================================
+    // Tabs
+    // ============================================================
+    const tabs = document.getElementById("tabs");
+    const tabBtns = tabs.querySelectorAll(".tab-btn");
+    const formTabs = document.querySelectorAll(".form-tab");
+
+    function ativarAba(nome) {
+      tabs.dataset.tab = nome;
+      tabBtns.forEach((b) => b.classList.toggle("ativo", b.dataset.target === nome));
+      formTabs.forEach((f) => f.classList.toggle("ativo", f.dataset.tabContent === nome));
+    }
+
+    tabBtns.forEach((btn) => {
+      btn.addEventListener("click", () => ativarAba(btn.dataset.target));
+    });
+
+    // ============================================================
+    // Toggle senha
+    // ============================================================
+    document.querySelectorAll(".toggle-senha").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const input = document.getElementById(btn.dataset.target);
+        const aberto = btn.querySelector(".olho-aberto");
+        const fechado = btn.querySelector(".olho-fechado");
+        const mostrar = input.type === "password";
+        input.type = mostrar ? "text" : "password";
+        aberto.style.display = mostrar ? "none" : "block";
+        fechado.style.display = mostrar ? "block" : "none";
+      });
+    });
+
+    // ============================================================
+    // Força da senha (aba criar)
+    // ============================================================
+    const inputPass = document.getElementById("reg-pass");
+    const barras = document.querySelectorAll("#forca .forca-barra");
+    const textoForca = document.getElementById("forca-texto");
+
+    function calcularForca(s) {
+      let n = 0;
+      if (s.length >= 6) n++;
+      if (s.length >= 10) n++;
+      if (/[A-Z]/.test(s) && /[a-z]/.test(s)) n++;
+      if (/[0-9]/.test(s)) n++;
+      if (/[^a-zA-Z0-9]/.test(s)) n++;
+      return Math.min(n, 4);
+    }
+
+    if (inputPass) {
+      inputPass.addEventListener("input", () => {
+        const v = inputPass.value;
+        const n = calcularForca(v);
+        const cores = ["#ff6b6b", "#fbbf24", "#4ade80", "#4ade80"];
+        const labels = ["Muito fraca", "Fraca", "Boa", "Forte"];
+        barras.forEach((b, i) => {
+          b.style.background = i < n ? cores[n - 1] : "var(--border-2)";
+        });
+        if (!v) {
+          textoForca.textContent = "";
+        } else {
+          textoForca.textContent = labels[Math.max(n - 1, 0)];
+          textoForca.style.color = cores[Math.max(n - 1, 0)];
+        }
+      });
+    }
+
+    // ============================================================
+    // Submit — estados de carregamento
+    // ============================================================
+    const formLogin = document.getElementById("form-login");
+    const btnLogin = document.getElementById("btn-login");
+    if (formLogin) {
+      formLogin.addEventListener("submit", () => {
+        btnLogin.disabled = true;
+        btnLogin.innerHTML = '<span class="spinner"></span>Entrando...';
+      });
+    }
+
+    const formRegister = document.getElementById("form-register");
+    const btnRegister = document.getElementById("btn-register");
+    if (formRegister) {
+      formRegister.addEventListener("submit", (e) => {
+        const s1 = document.getElementById("reg-pass").value;
+        const s2 = document.getElementById("reg-pass2").value;
+        if (s1 !== s2) {
+          e.preventDefault();
+          return;
+        }
+        btnRegister.disabled = true;
+        btnRegister.innerHTML = '<span class="spinner"></span>Criando conta...';
+      });
+    }
+
+    // ============================================================
+    // PWA: registra o service worker
+    // ============================================================
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/service-worker.js')
+          .then(reg => console.log('[PWA] SW registrado:', reg.scope))
+          .catch(err => console.warn('[PWA] Falha no SW:', err));
+      });
+    }
+  </script>
+</body>
+</html>
+  </script>
+</body>
+</html>

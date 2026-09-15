@@ -1,4 +1,6 @@
 {
+  "id": "/",
+  "scope": "/",
   "name": "Decoder — Teclas Próximas",
   "short_name": "Decoder",
   "description": "Decifra frases embaralhadas por teclas vizinhas do teclado.",

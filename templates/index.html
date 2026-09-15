@@ -156,6 +156,18 @@
 </head>
 
 <body>
+<div style="position:fixed;top:14px;right:18px;font-size:14px;color:var(--muted);z-index:10;display:flex;align-items:center;gap:14px">
+  {% if usuario %}
+    <a href="/auth/account" style="color:var(--muted);text-decoration:none;display:flex;align-items:center;gap:8px;padding:6px 10px;border-radius:8px;transition:background .15s" onmouseover="this.style.background='rgba(255,255,255,0.05)'" onmouseout="this.style.background='transparent'">
+      <span style="display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:7px;background:linear-gradient(135deg,var(--accent),#6a5bff);color:white;font-size:12px;font-weight:700">{{ usuario.username[0]|upper }}</span>
+      <strong style="color:var(--fg);font-weight:600">{{ usuario.username }}</strong>
+    </a>
+    <a href="/auth/logout" style="color:var(--accent);text-decoration:none">Sair</a>
+  {% else %}
+    <a href="/auth/login" style="color:var(--accent);text-decoration:none">Entrar</a>
+    <a href="/auth/register" style="color:white;text-decoration:none;padding:7px 14px;background:linear-gradient(135deg,var(--accent),#6a5bff);border-radius:8px;font-weight:600;font-size:13px">Criar conta</a>
+  {% endif %}
+</div>
   <div class="wrap">
     <h1>🔎 Decoder — teclas próximas</h1>
     <div class="sub">

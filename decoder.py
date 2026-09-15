@@ -1,6 +1,12 @@
 import os
 
-# --- Mapa QWERTY com coordenadas (permite diagonais) ---
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
+
+# ============================================================
+# Mapa QWERTY com coordenadas (permite diagonais)
+# ============================================================
+
 KEYS = {
     'q':(0,0),'w':(0,1),'e':(0,2),'r':(0,3),'t':(0,4),
     'y':(0,5),'u':(0,6),'i':(0,7),'o':(0,8),'p':(0,9),
@@ -11,9 +17,9 @@ KEYS = {
 }
 
 VIZ = {}
-for k1,(r1,c1) in KEYS.items():
+for k1, (r1, c1) in KEYS.items():
     nb = []
-    for k2,(r2,c2) in KEYS.items():
+    for k2, (r2, c2) in KEYS.items():
         if k1 == k2:
             continue
         d = ((r1-r2)**2 + (c1-c2)**2) ** 0.5
@@ -22,9 +28,13 @@ for k1,(r1,c1) in KEYS.items():
     VIZ[k1] = nb
 
 
-# --- Trie ---
+# ============================================================
+# Trie
+# ============================================================
+
 class TrieNode:
-    __slots__ = ('children','word')
+    __slots__ = ('children', 'word')
+
     def __init__(self):
         self.children = {}
         self.word = None
@@ -59,7 +69,7 @@ class Decoder:
                 child = node.children.get(c)
                 if child is not None:
                     path.append(c)
-                    dfs(i+1, child, path)
+                    dfs(i + 1, child, path)
                     path.pop()
 
         dfs(0, self.root, [])
@@ -75,17 +85,22 @@ class Decoder:
         return [self.decode_token(tok, limit) for tok in phrase.split()]
 
 
-# --- Carregadores ---
-def carregar_dic(caminho="br-sem-acentos.txt"):
+# ============================================================
+# Carregadores
+# ============================================================
+
+def carregar_dic(caminho=None):
+    caminho = caminho or os.path.join(BASE_DIR, "br-sem-acentos.txt")
     if os.path.exists(caminho):
         with open(caminho, encoding="utf-8") as f:
             return [l.strip().lower() for l in f if l.strip()]
     print("[aviso] br-sem-acentos.txt não encontrado — usando lista pequena.")
-    return ["meu","nome","arvore","muda","tiro","nicho","casa","bola"]
+    return ["meu", "nome", "arvore", "muda", "tiro", "nicho", "casa", "bola"]
 
 
-def carregar_freq(caminho="frequencia.txt"):
+def carregar_freq(caminho=None):
     freq = {}
+    caminho = caminho or os.path.join(BASE_DIR, "frequencia.txt")
     if not os.path.exists(caminho):
         print("[aviso] frequencia.txt não encontrado — sem ranking.")
         return freq
@@ -102,9 +117,12 @@ def carregar_freq(caminho="frequencia.txt"):
     return freq
 
 
-# --- Main ---
+# ============================================================
+# Main (uso local / teste pela linha de comando)
+# ============================================================
+
 if __name__ == "__main__":
-    LIMITE = None       # None = sem limite; ou ex.: 10
+    LIMITE = None
 
     palavras = carregar_dic()
     freq = carregar_freq()

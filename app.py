@@ -1,65 +1,52 @@
 """
 Decoder — API Flask para decifrar frases com teclas próximas.
-
-Endpoints:
-    GET  /                    → página principal (PWA)
-    GET  /service-worker.js   → service worker na raiz (obrigatório para PWA)
-    GET  /favicon.ico         → evita 404 no navegador
-    POST /decode              → decifra uma frase
-
-Segurança:
-    - SECRET_KEY via variável de ambiente
-    - Cookies de sessão com Secure/HttpOnly/SameSite
-    - Cabeçalhos HTTP via Flask-Talisman
-    - Rate limiting via Flask-Limiter
-    - Validação de entrada via Marshmallow
 """
 
 import os
 
-from flask import Flask, render_template, request, jsonify
+from flask import Flask, render_template, request, jsonify, g, session
 from flask_talisman import Talisman
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
+from flask_wtf.csrf import CSRFProtect, CSRFError
 from marshmallow import Schema, fields, validate, ValidationError, pre_load
 
 from decoder import Decoder, carregar_dic, carregar_freq
+from models import init_db
+from auth import auth_bp, carregar_usuario_em_g
 
 
 # ============================================================
-# Configuração do app
+# Configuração
 # ============================================================
 
 app = Flask(__name__)
+
+# Em produção o Render injeta SECRET_KEY. Em local, usa fallback.
+IS_PRODUCTION = "SECRET_KEY" in os.environ
 
 app.config['SECRET_KEY'] = os.environ.get(
     'SECRET_KEY', 'dev-fallback-nao-use-em-prod'
 )
 
 app.config.update(
-    SESSION_COOKIE_SECURE=True,
+    # Secure só em produção (em HTTP local o navegador descarta o cookie)
+    SESSION_COOKIE_SECURE=IS_PRODUCTION,
     SESSION_COOKIE_HTTPONLY=True,
     SESSION_COOKIE_SAMESITE='Lax',
+    PERMANENT_SESSION_LIFETIME=60 * 60 * 24 * 30,  # 30 dias
 )
 
 
 # ============================================================
-# Segurança: cabeçalhos HTTP (Flask-Talisman)
+# Segurança
 # ============================================================
-# CSP desativado porque o index.html usa <script> e <style> inline.
-# Os demais cabeçalhos (X-Frame-Options, X-Content-Type-Options,
-# Referrer-Policy, HSTS) continuam sendo aplicados automaticamente.
 
 Talisman(
     app,
     force_https=False,
     content_security_policy=None,
 )
-
-
-# ============================================================
-# Segurança: rate limiting (Flask-Limiter)
-# ============================================================
 
 limiter = Limiter(
     get_remote_address,
@@ -68,9 +55,36 @@ limiter = Limiter(
     storage_uri="memory://",
 )
 
+csrf = CSRFProtect(app)
+
 
 # ============================================================
-# Carregamento do dicionário (uma vez, na inicialização)
+# Banco de dados + Autenticação
+# ============================================================
+
+init_db()
+app.register_blueprint(auth_bp)
+
+
+# Carrega o usuário logado em g, mas só quando faz sentido.
+# Pula estáticos, service worker, favicon e /decode (API pública).
+_ENDPOINTS_SEM_USUARIO = {"static", "service_worker", "favicon", "decode"}
+
+@app.before_request
+def before_req():
+    if request.endpoint in _ENDPOINTS_SEM_USUARIO:
+        return
+    carregar_usuario_em_g()
+
+
+@app.context_processor
+def injetar_usuario():
+    """Deixa {{ usuario }} disponível em todos os templates."""
+    return {"usuario": getattr(g, "usuario", None)}
+
+
+# ============================================================
+# Dicionário
 # ============================================================
 
 palavras = carregar_dic()
@@ -82,12 +96,10 @@ print(f"[freq] {len(freq)} palavras com frequência")
 
 
 # ============================================================
-# Schema de validação (Marshmallow)
+# Schema de validação
 # ============================================================
 
 class DecodeRequestSchema(Schema):
-    """Valida o corpo JSON do endpoint /decode."""
-
     frase = fields.Str(
         required=True,
         validate=validate.Length(min=1, max=500),
@@ -100,7 +112,6 @@ class DecodeRequestSchema(Schema):
 
     @pre_load
     def normalizar_limite(self, data, **kwargs):
-        """Converte limite vazio ('') em None antes da validação."""
         if isinstance(data, dict):
             v = data.get("limite")
             if v is None or (isinstance(v, str) and v.strip() == ""):
@@ -116,31 +127,38 @@ schema = DecodeRequestSchema()
 # ============================================================
 
 @app.route("/")
-def index():
-    """Página principal (PWA)."""
+def raiz():
+    """Landing se deslogado, decoder se logado."""
+    # Só considera logado se o usuário REALMENTE existe no banco.
+    # Se a sessão aponta pra um user_id que sumiu (banco resetado),
+    # limpa a sessão e manda pra landing.
+    if session.get("user_id"):
+        if getattr(g, "usuario", None):
+            return render_template("index.html")
+        session.clear()
+    return render_template("landing.html")
+
+
+@app.route("/app")
+def app_decoder():
+    """Decoder acessível pra qualquer um (logado ou não)."""
     return render_template("index.html")
 
 
 @app.route("/service-worker.js")
 def service_worker():
-    """
-    Serve o service worker na raiz do site.
-    Precisa estar em /service-worker.js (não em /static/) para
-    que o escopo padrão seja '/', controlando o site inteiro.
-    """
     return app.send_static_file("service-worker.js")
 
 
 @app.route("/favicon.ico")
 def favicon():
-    """Evita 404 no console do navegador."""
     return app.send_static_file("icons/icon-192.png")
 
 
 @app.route("/decode", methods=["POST"])
+@csrf.exempt
 @limiter.limit("30 per minute")
 def decode():
-    """Decifra uma frase e retorna os candidatos ordenados por frequência."""
     try:
         data = schema.load(request.get_json(silent=True) or {})
     except ValidationError as err:
@@ -156,11 +174,7 @@ def decode():
     listas = dec.decode(frase, limit=limite)
 
     resposta = [
-        {
-            "token": tok,
-            "total": len(matches),
-            "matches": matches,
-        }
+        {"token": tok, "total": len(matches), "matches": matches}
         for tok, matches in zip(tokens, listas)
     ]
     return jsonify({"tokens": resposta})
@@ -172,10 +186,23 @@ def decode():
 
 @app.errorhandler(429)
 def ratelimit_handler(e):
-    """Resposta JSON para o erro de rate limit (Too Many Requests)."""
     return jsonify({
         "erro": "Muitas requisições. Tente novamente em instantes."
     }), 429
+
+
+@app.errorhandler(CSRFError)
+def csrf_error_handler(e):
+    """Token CSRF inválido ou expirado."""
+    # Se for /decode (API JSON), responde JSON
+    if request.path == "/decode":
+        return jsonify({"erro": "Token CSRF inválido ou expirado."}), 400
+    # Senão, mostra a landing com a aba de login e aviso
+    return render_template(
+        "landing.html",
+        aba="login",
+        erro="Sessão expirada. Faça login novamente.",
+    ), 400
 
 
 # ============================================================

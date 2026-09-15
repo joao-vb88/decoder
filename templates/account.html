@@ -1,0 +1,543 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Minha conta — Decoder</title>
+  <link rel="icon" href="/static/icons/icon-192.png" type="image/png">
+  <meta name="theme-color" content="#4f8cff">
+  <style>
+    :root {
+      --bg: #0a0c12;
+      --card: #141821;
+      --fg: #e8eaed;
+      --muted: #8a92a6;
+      --muted-2: #565e72;
+      --accent: #4f8cff;
+      --accent-2: #6a5bff;
+      --accent-glow: rgba(79, 140, 255, 0.35);
+      --border: #262b36;
+      --border-2: #303643;
+      --erro: #ff6b6b;
+      --erro-bg: rgba(255, 107, 107, 0.08);
+      --ok: #4ade80;
+      --ok-bg: rgba(74, 222, 128, 0.10);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; }
+
+    body {
+      font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--fg);
+      min-height: 100vh;
+      padding: 40px 20px;
+      -webkit-font-smoothing: antialiased;
+      position: relative;
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      background-image:
+        radial-gradient(circle at 15% 10%, rgba(79, 140, 255, 0.10), transparent 40%),
+        radial-gradient(circle at 85% 90%, rgba(176, 106, 255, 0.08), transparent 40%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .wrap {
+      position: relative;
+      z-index: 1;
+      max-width: 720px;
+      margin: 0 auto;
+    }
+
+    .topo {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 32px;
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      text-decoration: none;
+      color: var(--fg);
+    }
+
+    .logo-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: 11px;
+      background: linear-gradient(135deg, var(--accent), var(--accent-2));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      box-shadow: 0 6px 18px var(--accent-glow);
+    }
+
+    .logo-text { font-size: 17px; font-weight: 700; letter-spacing: -0.3px; }
+
+    .btn-voltar {
+      color: var(--muted);
+      text-decoration: none;
+      font-size: 14px;
+      padding: 8px 14px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      transition: all 0.15s;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .btn-voltar:hover {
+      color: var(--fg);
+      border-color: var(--border-2);
+      background: rgba(255, 255, 255, 0.03);
+    }
+
+    .hero {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      margin-bottom: 32px;
+      animation: subir 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    @keyframes subir {
+      from { opacity: 0; transform: translateY(10px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .avatar {
+      width: 72px;
+      height: 72px;
+      border-radius: 20px;
+      background: linear-gradient(135deg, var(--accent), var(--accent-2));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 30px;
+      font-weight: 700;
+      color: white;
+      box-shadow: 0 12px 32px var(--accent-glow);
+      flex-shrink: 0;
+    }
+
+    .hero-info h1 {
+      font-size: 26px;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+      margin-bottom: 6px;
+      line-height: 1.1;
+    }
+
+    .hero-info p {
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .flash {
+      padding: 12px 16px;
+      border-radius: 10px;
+      font-size: 13.5px;
+      line-height: 1.5;
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      animation: subir 0.3s ease;
+    }
+
+    .flash.erro {
+      background: var(--erro-bg);
+      border: 1px solid rgba(255, 107, 107, 0.28);
+      color: var(--erro);
+    }
+
+    .flash.ok {
+      background: var(--ok-bg);
+      border: 1px solid rgba(74, 222, 128, 0.25);
+      color: var(--ok);
+    }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 26px 28px;
+      margin-bottom: 18px;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+      animation: subir 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .card h2 {
+      font-size: 17px;
+      font-weight: 700;
+      letter-spacing: -0.3px;
+      margin-bottom: 6px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .card h2.danger { color: var(--erro); }
+
+    .card .desc {
+      color: var(--muted);
+      font-size: 13.5px;
+      margin-bottom: 22px;
+      line-height: 1.5;
+    }
+
+    .campo { margin-bottom: 18px; }
+
+    .campo-label {
+      display: block;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--fg);
+      margin-bottom: 8px;
+    }
+
+    .input-wrap {
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+
+    .input-icon {
+      position: absolute;
+      left: 15px;
+      color: var(--muted);
+      pointer-events: none;
+      display: flex;
+      transition: color 0.15s;
+    }
+
+    .input-wrap input {
+      width: 100%;
+      background: #0d1017;
+      border: 1.5px solid var(--border);
+      border-radius: 10px;
+      color: var(--fg);
+      padding: 12px 14px 12px 43px;
+      font-size: 14.5px;
+      outline: none;
+      transition: border-color 0.15s, box-shadow 0.15s;
+      font-family: inherit;
+    }
+
+    .input-wrap input:hover { border-color: var(--border-2); }
+    .input-wrap input:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 4px rgba(79, 140, 255, 0.13);
+    }
+    .input-wrap:focus-within .input-icon { color: var(--accent); }
+
+    .toggle-senha {
+      position: absolute;
+      right: 10px;
+      background: transparent;
+      border: none;
+      color: var(--muted);
+      cursor: pointer;
+      padding: 7px;
+      border-radius: 7px;
+      display: flex;
+      transition: color 0.15s, background 0.15s;
+    }
+
+    .toggle-senha:hover { color: var(--fg); background: rgba(255, 255, 255, 0.06); }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+
+    @media (max-width: 560px) {
+      .grid-2 { grid-template-columns: 1fr; }
+    }
+
+    .btn {
+      border: none;
+      padding: 11px 22px;
+      border-radius: 10px;
+      font-size: 14.5px;
+      font-weight: 600;
+      cursor: pointer;
+      font-family: inherit;
+      transition: all 0.15s;
+      letter-spacing: -0.1px;
+    }
+
+    .btn-primario {
+      background: linear-gradient(135deg, var(--accent), var(--accent-2));
+      color: white;
+      box-shadow: 0 6px 18px var(--accent-glow);
+    }
+
+    .btn-primario:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 10px 24px var(--accent-glow);
+    }
+
+    .btn-primario:active { transform: translateY(0); }
+
+    .btn-perigo {
+      background: rgba(255, 107, 107, 0.1);
+      color: var(--erro);
+      border: 1px solid rgba(255, 107, 107, 0.28);
+    }
+
+    .btn-perigo:hover {
+      background: rgba(255, 107, 107, 0.15);
+      border-color: rgba(255, 107, 107, 0.4);
+    }
+
+    .danger {
+      border-color: rgba(255, 107, 107, 0.2);
+    }
+
+    .divisor {
+      height: 1px;
+      background: var(--border);
+      margin: 22px 0;
+    }
+
+    .info-linha {
+      display: flex;
+      justify-content: space-between;
+      padding: 10px 0;
+      font-size: 13.5px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .info-linha:last-child { border-bottom: none; }
+
+    .info-linha span:first-child { color: var(--muted); }
+    .info-linha span:last-child { color: var(--fg); font-weight: 500; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="topo">
+      <a href="/" class="logo">
+        <div class="logo-icon">🔎</div>
+        <div class="logo-text">Decoder</div>
+      </a>
+      <a href="/" class="btn-voltar">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="19" y1="12" x2="5" y2="12"/>
+          <polyline points="12 19 5 12 12 5"/>
+        </svg>
+        Voltar
+      </a>
+    </div>
+
+    <div class="hero">
+      <div class="avatar">{{ usuario.username[0]|upper }}</div>
+      <div class="hero-info">
+        <h1>{{ usuario.username }}</h1>
+        <p>{{ usuario.email }}</p>
+      </div>
+    </div>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% for categoria, msg in messages %}
+        <div class="flash {{ categoria }}">
+          {% if categoria == 'erro' %}
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="10"/>
+              <line x1="12" y1="8" x2="12" y2="12"/>
+              <line x1="12" y1="16" x2="12.01" y2="16"/>
+            </svg>
+          {% else %}
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="20 6 9 17 4 12"/>
+            </svg>
+          {% endif %}
+          <span>{{ msg }}</span>
+        </div>
+      {% endfor %}
+    {% endwith %}
+
+    <!-- Card: Perfil -->
+    <div class="card">
+      <h2>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+          <circle cx="12" cy="7" r="4"/>
+        </svg>
+        Perfil
+      </h2>
+      <p class="desc">Suas informações básicas. Usuário e email precisam ser únicos.</p>
+
+      <form method="post">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <div class="grid-2">
+          <div class="campo">
+            <label class="campo-label" for="username">Usuário</label>
+            <div class="input-wrap">
+              <span class="input-icon">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                  <circle cx="12" cy="7" r="4"/>
+                </svg>
+              </span>
+              <input id="username" name="username" type="text" value="{{ usuario.username }}" required minlength="3" maxlength="20">
+            </div>
+          </div>
+
+          <div class="campo">
+            <label class="campo-label" for="email">Email</label>
+            <div class="input-wrap">
+              <span class="input-icon">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+                  <polyline points="22,6 12,13 2,6"/>
+                </svg>
+              </span>
+              <input id="email" name="email" type="email" value="{{ usuario.email }}" required>
+            </div>
+          </div>
+        </div>
+
+        <button type="submit" class="btn btn-primario">Salvar alterações</button>
+      </form>
+    </div>
+
+    <!-- Card: Segurança -->
+    <div class="card">
+      <h2>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="11" width="18" height="11" rx="2"/>
+          <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+        </svg>
+        Segurança
+      </h2>
+      <p class="desc">Altere sua senha. Você precisará da senha atual para confirmar.</p>
+
+      <form method="post" action="/auth/change-password">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <div class="campo">
+          <label class="campo-label" for="atual">Senha atual</label>
+          <div class="input-wrap">
+            <span class="input-icon">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="11" width="18" height="11" rx="2"/>
+                <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+              </svg>
+            </span>
+            <input id="atual" name="atual" type="password" placeholder="••••••••" required>
+          </div>
+        </div>
+
+        <div class="grid-2">
+          <div class="campo">
+            <label class="campo-label" for="nova">Nova senha</label>
+            <div class="input-wrap">
+              <span class="input-icon">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <rect x="3" y="11" width="18" height="11" rx="2"/>
+                  <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                </svg>
+              </span>
+              <input id="nova" name="nova" type="password" placeholder="Mínimo 6 caracteres" required minlength="6">
+            </div>
+          </div>
+
+          <div class="campo">
+            <label class="campo-label" for="nova2">Confirmar nova senha</label>
+            <div class="input-wrap">
+              <span class="input-icon">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <rect x="3" y="11" width="18" height="11" rx="2"/>
+                  <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                </svg>
+              </span>
+              <input id="nova2" name="nova2" type="password" placeholder="Repita a senha" required>
+            </div>
+          </div>
+        </div>
+
+        <button type="submit" class="btn btn-primario">Alterar senha</button>
+      </form>
+    </div>
+
+    <!-- Card: Info -->
+    <div class="card">
+      <h2>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="10"/>
+          <line x1="12" y1="16" x2="12" y2="12"/>
+          <line x1="12" y1="8" x2="12.01" y2="8"/>
+        </svg>
+        Informações
+      </h2>
+
+      <div class="info-linha">
+        <span>Membro desde</span>
+        <span>{{ usuario.created_at }}</span>
+      </div>
+      <div class="info-linha">
+        <span>ID da conta</span>
+        <span>#{{ usuario.id }}</span>
+      </div>
+    </div>
+
+    <!-- Card: Danger zone -->
+    <div class="card danger">
+      <h2 class="danger">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+          <line x1="12" y1="9" x2="12" y2="13"/>
+          <line x1="12" y1="17" x2="12.01" y2="17"/>
+        </svg>
+        Zona de perigo
+      </h2>
+      <p class="desc">Apagar a conta é <strong>permanente</strong>. Todos os seus dados serão removidos e não poderão ser recuperados.</p>
+
+      <form method="post" action="/auth/delete-account" onsubmit="return confirm('Tem certeza absoluta? Essa ação não pode ser desfeita.');">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <div class="grid-2">
+          <div class="campo">
+            <label class="campo-label" for="senha">Confirme sua senha</label>
+            <div class="input-wrap">
+              <span class="input-icon">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <rect x="3" y="11" width="18" height="11" rx="2"/>
+                  <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                </svg>
+              </span>
+              <input id="senha" name="senha" type="password" placeholder="••••••••" required>
+            </div>
+          </div>
+
+          <div class="campo">
+            <label class="campo-label" for="confirmacao">Digite "APAGAR"</label>
+            <div class="input-wrap">
+              <span class="input-icon">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <polyline points="3 6 5 6 21 6"/>
+                  <path d="M19 6l-2 14a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2L5 6"/>
+                </svg>
+              </span>
+              <input id="confirmacao" name="confirmacao" type="text" placeholder="APAGAR" required>
+            </div>
+          </div>
+        </div>
+
+        <button type="submit" class="btn btn-perigo">Apagar minha conta</button>
+      </form>
+    </div>
+  </div>
+</body>
+</html>
